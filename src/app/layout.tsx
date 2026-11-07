@@ -6,6 +6,9 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { TrackView } from "@/components/track-view";
 
+// The shared header reads the database, so pages (including 404s) must render at request time.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: {
