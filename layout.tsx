@@ -1,56 +1,63 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import {
-  BarChart3, Bookmark, FileText, Globe2, Image, LayoutDashboard, Radio, ShieldCheck, Users, Zap,
-} from "lucide-react";
-import { getCurrentUser, canWrite, canEditAny, canFactCheck, isAdmin } from "@/lib/auth";
-import { ROLE_LABELS } from "@/lib/utils";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
+import { TrackView } from "@/components/track-view";
 
-export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  title: {
+    default: "TrendoraNews — Bangladesh & World News, Live",
+    template: "%s | TrendoraNews",
+  },
+  description:
+    "TrendoraNews — breaking news, Bangladesh, world, business, technology, sports, history, science and more. Live updates, fact-checks and interactive explorers.",
+  keywords: [
+    "news",
+    "Bangladesh news",
+    "breaking news",
+    "world news",
+    "TrendoraNews",
+    "live news",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: "TrendoraNews",
+    title: "TrendoraNews — Breaking News & World Coverage",
+    description: "Breaking news, live updates, fact checks and interactive explorers.",
+    images: ["/og-image.svg"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TrendoraNews",
+    description: "Breaking news, live updates, fact checks and interactive explorers.",
+  },
+  robots: { index: true, follow: true },
+  alternates: { types: { "application/rss+xml": "/rss.xml" } },
+};
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/auth/login");
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f7f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
 
-  const links = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Overview", show: true },
-    { href: "/dashboard/saved", icon: Bookmark, label: "Saved & History", show: true },
-    { href: "/dashboard/articles", icon: FileText, label: "Articles", show: canWrite(user.role) },
-    { href: "/dashboard/articles/new", icon: FileText, label: "New Article", show: canWrite(user.role) },
-    { href: "/dashboard/breaking", icon: Radio, label: "Live / Breaking", show: canEditAny(user.role) },
-    { href: "/dashboard/media", icon: Image, label: "Media Library", show: canWrite(user.role) },
-    { href: "/dashboard/analytics", icon: BarChart3, label: "Analytics", show: isAdmin(user.role) },
-    { href: "/dashboard/fact-check", icon: ShieldCheck, label: "Fact Check Desk", show: canFactCheck(user.role) },
-    { href: "/dashboard/users", icon: Users, label: "Users & Roles", show: isAdmin(user.role) },
-    { href: "/explore/map", icon: Globe2, label: "World Map", show: true },
-  ].filter((l) => l.show);
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto flex max-w-7xl gap-6 px-4 py-8">
-      <aside className="card h-fit w-60 shrink-0 p-4 lg:sticky lg:top-40">
-        <div className="flex items-center gap-2 border-b border-(--line) pb-3">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-red-600 text-white">
-            <Zap size={15} fill="currentColor" />
-          </span>
-          <div>
-            <p className="text-sm font-black">Newsroom</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-red-600">{ROLE_LABELS[user.role] ?? user.role}</p>
-          </div>
-        </div>
-        <nav className="mt-3 flex flex-col gap-1">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-red-50 hover:text-red-700 dark:hover:bg-slate-800"
-            >
-              <l.icon size={16} /> {l.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+    <html lang="en" suppressHydrationWarning>
+      <body className="flex min-h-screen flex-col font-sans antialiased">
+        <ThemeProvider>
+          <TrackView />
+          <Header />
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
