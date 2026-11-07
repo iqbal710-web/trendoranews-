@@ -5,7 +5,11 @@ import { db } from "@/db";
 import { sessions, users, type User } from "@/db/schema";
 
 const COOKIE_NAME = "trendora_session";
-const SECRET = process.env.AUTH_SECRET || "trendora-dev-secret-change-me";
+function sessionSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET is required in production");
+  return secret || "trendora-dev-secret-change-me";
+}
 
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -22,7 +26,7 @@ export function verifyPassword(password: string, stored: string): boolean {
 }
 
 export function signToken(token: string): string {
-  return createHmac("sha256", SECRET).update(token).digest("hex");
+  return createHmac("sha256", sessionSecret()).update(token).digest("hex");
 }
 
 export async function createSession(userId: number): Promise<string> {
@@ -46,8 +50,8 @@ export async function setSessionCookie(token: string) {
 
 export async function clearSessionCookie() {
   const c = await cookies();
-  c.delete(COOKIE_NAME);
   const token = c.get(COOKIE_NAME)?.value;
+  c.delete(COOKIE_NAME);
   if (token) {
     await db.delete(sessions).where(eq(sessions.token, token));
   }

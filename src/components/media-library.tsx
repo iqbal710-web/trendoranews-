@@ -9,6 +9,7 @@ export function MediaLibrary() {
   const [items, setItems] = useState<Media[]>([]);
   const [q, setQ] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
   const [alt, setAlt] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -24,17 +25,19 @@ export function MediaLibrary() {
   }, []);
 
   const upload = async () => {
-    if (!file) return setMsg("Choose a file first");
+    if (!file && !url.trim()) return setMsg("Choose a file or enter a hosted media URL");
     const fd = new FormData();
-    fd.set("file", file);
+    if (file) fd.set("file", file);
+    else fd.set("url", url.trim());
     fd.set("title", title);
     fd.set("alt", alt || title);
-    fd.set("type", file.type.startsWith("video") ? "video" : file.type.startsWith("audio") ? "audio" : "image");
+    fd.set("type", file?.type.startsWith("video") ? "video" : file?.type.startsWith("audio") ? "audio" : "image");
     const res = await fetch("/api/media", { method: "POST", body: fd });
     const data = await res.json();
     if (!res.ok) return setMsg(data.error ?? "Upload failed");
     setMsg(`Uploaded ✔ ${data.item.url}`);
     setFile(null);
+    setUrl("");
     setTitle("");
     load();
   };
@@ -42,12 +45,13 @@ export function MediaLibrary() {
   return (
     <main>
       <h1 className="text-2xl font-black tracking-tight">Media Library</h1>
-      <p className="mt-1 text-sm text-(--muted)">Upload images/video/audio, add alt text & metadata, then copy URLs into articles.</p>
+      <p className="mt-1 text-sm text-(--muted)">Register a hosted media URL, or upload a file when running locally, then copy URLs into articles. File uploads on Vercel require external storage.</p>
 
       <div className="card mt-5 p-5">
         <p className="label">Upload media</p>
         <div className="flex flex-wrap items-center gap-2">
           <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
+          <input className="input !w-72" type="url" placeholder="Hosted image URL (if no file)" value={url} onChange={(e) => setUrl(e.target.value)} />
           <input className="input !w-48" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
           <input className="input !w-48" placeholder="Alt text (image SEO)" value={alt} onChange={(e) => setAlt(e.target.value)} />
           <button className="btn btn-primary" onClick={upload}><Upload size={15} /> Upload</button>
